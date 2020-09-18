@@ -6,30 +6,49 @@
 #
 
 FILENAME=
-ARTIST="Harris Heller"
-GENRE="Lo-Fi"
-ALBUM="High At The Planetarium"
+ARTIST=
+GENRE=
+ALBUM=
 TRACKNO=
 TITLE=
 
-if [ -f "$1" ]; then
+getDataFromFilename() {
     FILENAME=$(basename "$1")
-    echo "$FILENAME is a file"
+
+    TRACKNO=${FILENAME%%.*}
+
+    ARTIST=${FILENAME#*.}	    # Remove track number
+    ARTIST=${ARTIST%-*}	    # Remove file extension and title
+    ARTIST=${ARTIST:1:$((${#ARTIST} - 2))}
+
+    TITLE=${FILENAME#*-}	    # Remove track number and artist name
+    TITLE=${TITLE%.*}	    # Remove file extension
+    TITLE=${TITLE:1}	    # Remove leading space
+}
+
+getAlbumFromFolder() {
+    ALBUM=${1#*.}
+    ALBUM=${ALBUM:1:$((${#ALBUM} - 1))}
+}
+
+convertAndTag() {
+    lame "$FILENAME" --tt "$TITLE" --ta "$ARTIST" --tl "$ALBUM" --tn $TRACKNO
+}
+
+myFunction() {
+    echo $1;
+}
+
+if [ -f "$1" ]; then
+    echo "$1 is a file"
 fi
 if [ -d "$1" ]; then
     echo "$1 is a directory"
+    getAlbumFromFolder "$1"
+    cd "$1"
+    for file in *; do
+	getDataFromFilename "$file"
+	convertAndTag
+    done
 fi
 
-TRACKNO=${FILENAME%%.*}
-
-ARTIST=${FILENAME#*.}	    # Remove track number
-ARTIST=${ARTIST%-*}	    # Remove file extension and title
-ARTIST=${ARTIST:1:$((${#ARTIST} - 2))}
-
-
-TITLE=${FILENAME#*-}	    # Remove track number and artist name
-TITLE=${TITLE%.*}	    # Remove file extension
-TITLE=${TITLE:1}	    # Remove leading space
-
-
-lame "$FILENAME" --tt "$TITLE" --ta "$ARTIST" --tn $TRACKNO
